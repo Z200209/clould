@@ -1,0 +1,65 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.provider.mapper.sms.SmsMapper">
+    
+    <insert id="insert" parameterType="com.example.common.entity.Sms" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sms (
+        <trim suffixOverrides=",">
+            <if test="sms.phone != null and sms.phone != ''">phone,</if>
+            <if test="sms.content != null and sms.content != ''">content,</if>
+            <if test="sms.templateCode != null and sms.templateCode != ''">template_code,</if>
+            <if test="sms.templateParam != null and sms.templateParam != ''">template_param,</if>
+            <if test="sms.status != null">status,</if>
+            <if test="sms.bizId != null and sms.bizId != ''">biz_id,</if>
+            <if test="sms.sendTime != null">send_time,</if>
+            <if test="sms.createTime != null">create_time,</if>
+            <if test="sms.updateTime != null">update_time,</if>
+            <if test="sms.isDeleted != null">is_deleted,</if>
+        </trim>
+        )
+        VALUES (
+        <trim suffixOverrides=",">
+            <if test="sms.phone != null and sms.phone != ''">#{sms.phone},</if>
+            <if test="sms.content != null and sms.content != ''">#{sms.content},</if>
+            <if test="sms.templateCode != null and sms.templateCode != ''">#{sms.templateCode},</if>
+            <if test="sms.templateParam != null and sms.templateParam != ''">#{sms.templateParam},</if>
+            <if test="sms.status != null">#{sms.status},</if>
+            <if test="sms.bizId != null and sms.bizId != ''">#{sms.bizId},</if>
+            <if test="sms.sendTime != null">#{sms.sendTime},</if>
+            <if test="sms.createTime != null">#{sms.createTime},</if>
+            <if test="sms.updateTime != null">#{sms.updateTime},</if>
+            <if test="sms.isDeleted != null">#{sms.isDeleted},</if>
+        </trim>
+        )
+    </insert>
+    
+    <update id="update" parameterType="com.example.common.entity.Sms">
+        UPDATE sms
+        <set>
+            <if test="sms.phone != null and sms.phone != ''">phone = #{sms.phone},</if>
+            <if test="sms.content != null and sms.content != ''">content = #{sms.content},</if>
+            <if test="sms.templateCode != null and sms.templateCode != ''">template_code = #{sms.templateCode},</if>
+            <if test="sms.templateParam != null and sms.templateParam != ''">template_param = #{sms.templateParam},</if>
+            <if test="sms.status != null">status = #{sms.status},</if>
+            <if test="sms.bizId != null and sms.bizId != ''">biz_id = #{sms.bizId},</if>
+            <if test="sms.sendTime != null">send_time = #{sms.sendTime},</if>
+            <if test="sms.updateTime != null">update_time = #{sms.updateTime},</if>
+            <if test="sms.isDeleted != null">is_deleted = #{sms.isDeleted},</if>
+        </set>
+        WHERE id = #{sms.id} AND is_deleted = 0
+    </update>
+    
+    <!-- 逻辑删除 -->
+    <update id="delete" parameterType="java.math.BigInteger">
+        UPDATE sms SET is_deleted = 1, update_time = #{time} WHERE id = #{id} AND is_deleted = 0
+    </update>
+    
+    <!-- 查询时过滤已删除数据 -->
+    <select id="findById" parameterType="java.math.BigInteger" resultType="com.example.common.entity.Sms">
+        SELECT * FROM sms WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <select id="findByPhone" parameterType="string" resultType="com.example.common.entity.Sms">
+        SELECT * FROM sms WHERE phone = #{phone} AND is_deleted = 0
+    </select>
+    
+</mapper>

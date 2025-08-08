@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.provider.mapper.game.GameMapper">
+    <!-- 插入操作 -->
+    <insert id="insert" parameterType="com.example.common.entity.Game" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO game (
+        <if test="game.gameName != null and game.gameName != ''">game_name,</if>
+        <if test="game.price != null">price,</if>
+        <if test="game.gameIntroduction != null and game.gameIntroduction != ''">game_introduction,</if>
+        <if test="game.gameDate != null">game_date,</if>
+        <if test="game.gamePublisher != null and game.gamePublisher != ''">game_publisher,</if>
+        <if test="game.images != null and game.images != ''">images,</if>
+        <if test="game.createTime != null">create_time,</if>
+        <if test="game.updateTime != null">update_time,</if>
+        type_id,
+        is_deleted
+        )
+        VALUES (
+        <if test="game.gameName != null and game.gameName != ''">#{game.gameName},</if>
+        <if test="game.price != null">#{game.price},</if>
+        <if test="game.gameIntroduction != null and game.gameIntroduction != ''">#{game.gameIntroduction},</if>
+        <if test="game.gameDate != null">#{game.gameDate},</if>
+        <if test="game.gamePublisher != null and game.gamePublisher != ''">#{game.gamePublisher},</if>
+        <if test="game.images != null and game.images != ''">#{game.images},</if>
+        <if test="game.createTime != null">#{game.createTime},</if>
+        <if test="game.updateTime != null">#{game.updateTime},</if>
+        #{game.typeId},
+        #{game.isDeleted}
+        )
+    </insert>
+
+
+    <!-- 更新操作 -->
+    <update id="update" parameterType="com.example.common.entity.Game">
+        UPDATE game
+        <set>
+            <if test="game.id != null">id = #{game.id},</if>
+            <if test="game.gameName != null">game_name = #{game.gameName},</if>
+            <if test="game.price != null">price = #{game.price},</if>
+            <if test="game.gameIntroduction != null and game.gameIntroduction !=''">game_introduction = #{game.gameIntroduction},</if>
+            <if test="game.gameDate != null">game_date = #{game.gameDate},</if>
+            <if test="game.gamePublisher != null and game.gamePublisher !=''">game_publisher = #{game.gamePublisher},</if>
+            <if test="game.images != null and game.images !=''">images = #{game.images},</if>
+            <if test="game.updateTime != null">update_time = #{game.updateTime},</if>
+            <if test="game.typeId != null">type_id = #{game.typeId}</if>
+        </set>
+        WHERE id = #{game.id}
+    </update>
+
+    <!--列表查询 模糊查询 -->
+    <select id="getAll" parameterType="com.example.common.entity.Game">
+        SELECT *
+        FROM game
+        WHERE is_deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (
+            game_name LIKE CONCAT('%', #{keyword}, '%')
+            <if test="ids != null and ids != ''">
+                OR  type_id IN(${ids})
+            </if>
+            )
+        </if>
+        <if test="typeId != null">
+            AND type_id = #{typeId}
+        </if>
+        ORDER BY id ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+
+    <select id="getTotalCount" parameterType="com.example.common.entity.Game">
+        SELECT COUNT(*) FROM game
+        WHERE is_deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND game_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
+
+</mapper>

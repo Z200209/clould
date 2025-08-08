@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.provider.mapper.sms.SmsTaskCrondMapper">
+    
+    <insert id="insert" parameterType="com.example.common.entity.SmsTaskCrond" useGeneratedKeys="true" keyProperty="smsTaskCrond.id">
+        INSERT INTO sms_task_crond (
+        <trim suffixOverrides=",">
+            <if test="smsTaskCrond.phone != null and smsTaskCrond.phone != ''">phone,</if>
+            <if test="smsTaskCrond.templateParam != null and smsTaskCrond.templateParam != ''">template_param,</if>
+            <if test="smsTaskCrond.status != null">status,</if>
+            <if test="smsTaskCrond.executeTime != null">execute_time,</if>
+            <if test="smsTaskCrond.createTime != null">create_time,</if>
+            <if test="smsTaskCrond.updateTime != null">update_time,</if>
+            <if test="smsTaskCrond.isDeleted != null">is_deleted,</if>
+        </trim>
+        )
+        VALUES (
+        <trim suffixOverrides=",">
+            <if test="smsTaskCrond.phone != null and smsTaskCrond.phone != ''">#{smsTaskCrond.phone},</if>
+            <if test="smsTaskCrond.templateParam != null and smsTaskCrond.templateParam != ''">#{smsTaskCrond.templateParam},</if>
+            <if test="smsTaskCrond.status != null">#{smsTaskCrond.status},</if>
+            <if test="smsTaskCrond.executeTime != null">#{smsTaskCrond.executeTime},</if>
+            <if test="smsTaskCrond.createTime != null">#{smsTaskCrond.createTime},</if>
+            <if test="smsTaskCrond.updateTime != null">#{smsTaskCrond.updateTime},</if>
+            <if test="smsTaskCrond.isDeleted != null">#{smsTaskCrond.isDeleted},</if>
+        </trim>
+        )
+    </insert>
+    
+    <update id="update" parameterType="com.example.common.entity.SmsTaskCrond">
+        UPDATE sms_task_crond
+        <set>
+            <if test="smsTaskCrond.phone != null and smsTaskCrond.phone != ''">phone = #{smsTaskCrond.phone},</if>
+            <if test="smsTaskCrond.templateParam != null and smsTaskCrond.templateParam != ''">template_param = #{smsTaskCrond.templateParam},</if>
+            <if test="smsTaskCrond.status != null">status = #{smsTaskCrond.status},</if>
+            <if test="smsTaskCrond.executeTime != null">execute_time = #{smsTaskCrond.executeTime},</if>
+            <if test="smsTaskCrond.updateTime != null">update_time = #{smsTaskCrond.updateTime},</if>
+            <if test="smsTaskCrond.isDeleted != null">is_deleted = #{smsTaskCrond.isDeleted},</if>
+        </set>
+        WHERE id = #{smsTaskCrond.id} AND is_deleted = 0
+    </update>
+    
+    <!-- 更新任务状态 -->
+    <update id="updateStatus">
+        UPDATE sms_task_crond 
+        SET status = #{status}, 
+            execute_time = #{executeTime}, 
+            update_time = #{updateTime}
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+    
+    <!-- 逻辑删除 -->
+    <update id="delete" parameterType="java.math.BigInteger">
+        UPDATE sms_task_crond SET is_deleted = 1, update_time = #{time} WHERE id = #{id} AND is_deleted = 0
+    </update>
+    
+    <!-- 查询待执行的任务（按创建时间顺序） -->
+    <select id="findPendingTasks" resultType="com.example.common.entity.SmsTaskCrond">
+        SELECT * FROM sms_task_crond 
+        WHERE status = 0 
+        AND is_deleted = 0
+        ORDER BY create_time ASC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 根据ID查询任务 -->
+    <select id="findById" parameterType="java.math.BigInteger" resultType="com.example.common.entity.SmsTaskCrond">
+        SELECT * FROM sms_task_crond WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <!-- 根据手机号查询任务 -->
+    <select id="findByPhone" parameterType="string" resultType="com.example.common.entity.SmsTaskCrond">
+        SELECT * FROM sms_task_crond WHERE phone = #{phone} AND is_deleted = 0 ORDER BY create_time DESC
+    </select>
+    
+</mapper>

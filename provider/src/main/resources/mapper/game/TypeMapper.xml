@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.provider.mapper.game.TypeMapper">
+    <!-- 插入操作 -->
+    <insert id="insert" parameterType="com.example.common.entity.Type" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO type (
+        <if test="type.typeName != null and type.typeName != ''">type_name,</if>
+        <if test="type.parentId != null">parent_id,</if>
+        <if test="type.image != null and type.image != ''">image,</if>
+        <if test="type.createTime != null">create_time,</if>
+        <if test="type.updateTime != null">update_time,</if>
+        is_deleted
+        )
+        VALUES (
+        <if test="type.typeName != null and type.typeName != ''">#{type.typeName},</if>
+        <if test="type.parentId != null">#{type.parentId},</if>
+        <if test="type.image != null and type.image != ''">#{type.image},</if>
+        <if test="type.createTime != null">#{type.createTime},</if>
+        <if test="type.updateTime != null"> #{type.updateTime},</if>
+        #{type.isDeleted}
+        )
+    </insert>
+
+
+    <!-- 更新操作 -->
+    <update id="update" parameterType="com.example.common.entity.Type">
+        UPDATE type
+        <set> id = #{type.id}
+            <if test="type.typeName != null and type.typeName != ''">,type_name = #{type.typeName}</if>
+            <if test="type.parentId != null">,parent_id = #{type.parentId}</if>
+            <if test="type.image != null and type.image !=''">,image = #{type.image}</if>
+            <if test="type.updateTime != null">,type_name =#{type.updateTime}</if>
+        </set>
+        WHERE id = #{type.id}
+    </update>
+
+    <select id="getParentTypeList" parameterType="com.example.common.entity.Type" resultType="com.example.common.entity.Type">
+        SELECT * FROM type
+        WHERE is_deleted = 0 and parent_id is null
+        <if test="keyword != null and keyword != ''">
+            AND type_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY id ASC
+    </select>
+
+
+    <select id="getTypeIdList" parameterType="com.example.common.entity.Type" resultType="java.math.BigInteger">
+        SELECT id
+        FROM type
+        WHERE type_name LIKE CONCAT('%', #{keyword}, '%')
+          AND is_deleted = 0
+            LIMIT 999
+    </select>
+
+    <select id="getTotalCount" parameterType="com.example.common.entity.Type" resultType="int">
+        SELECT COUNT(*) FROM type
+        WHERE is_deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND type_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
+    <select id="getRootTypes" resultType="com.example.common.entity.Type">
+        SELECT * FROM type WHERE parent_id IS NULL OR parent_id = 0
+    </select>
+
+
+</mapper>

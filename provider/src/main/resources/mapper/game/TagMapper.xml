@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.provider.mapper.game.TagMapper">
+
+    <!-- 根据ID列表查询标签 -->
+    <select id="getByIds" resultType="com.example.common.entity.Tag">
+        SELECT * FROM tag 
+        WHERE is_deleted = 0
+        <if test="tagIds != null and tagIds.size() > 0">
+            AND id IN
+            <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+                #{tagId}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 插入标签 -->
+    <insert id="insert"
+            useGeneratedKeys="true"
+            keyProperty="tag.id"
+            parameterType="com.example.common.entity.Tag">
+        insert into tag(
+                       <if test="tag.name != null and tag.name != ''">name ,</if>
+                       <if test="tag.createTime != null">create_time ,</if>
+                       <if test="tag.updateTime != null">update_time ,</if>
+                   is_deleted 
+        )values(
+                       <if test="tag.name != null and tag.name != ''">#{tag.name} ,</if>
+                       <if test="tag.createTime != null">#{tag.createTime} ,</if>
+                       <if test="tag.updateTime != null">#{tag.updateTime} ,</if>
+                   #{tag.isDeleted} 
+        )
+    </insert>
+
+    <!-- 更新标签 -->
+    <update id="update" parameterType="com.example.common.entity.Tag">
+        UPDATE tag
+        <set>
+                   <if test="tag.name != null and tag.name != ''">
+                       name = #{tag.name},
+                   </if>
+                   <if test="tag.createTime != null">
+                       create_time = #{tag.createTime},
+                   </if>
+                   <if test="tag.updateTime != null">
+                       update_time = #{tag.updateTime},
+                   </if>
+                   <if test="tag.isDeleted != null">
+                       is_deleted = #{tag.isDeleted},
+                   </if>
+        </set>
+        WHERE id = #{tag.id}
+    </update>
+
+    <!-- 获取所有标签 -->
+    <select id="getAllTag" resultType="com.example.common.entity.Tag">
+        SELECT * FROM tag WHERE is_deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
