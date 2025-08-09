@@ -16,8 +16,7 @@ import java.util.List;
 /**
  * 游戏服务Feign客户端
  * 用于调用游戏微服务的远程接口
- * 严格按照provider接口定义
- * 注意：game-service有context-path=/game，需要在path中指定
+ * 严格按照provider接口定
  */
 @FeignClient(name = "provider", contextId = "appGameServiceFeign", path = "/app/game")
 public interface AppGameServiceFeign {

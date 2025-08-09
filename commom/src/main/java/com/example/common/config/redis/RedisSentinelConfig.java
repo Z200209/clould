@@ -17,8 +17,6 @@ import java.util.Set;
 
 /**
  * Redis哨兵模式配置类
- * 支持Redis高可用部署，与MySQL读写分离配置并存
- * 实现缓存层面的高可用性
  */
 @Configuration
 public class RedisSentinelConfig {

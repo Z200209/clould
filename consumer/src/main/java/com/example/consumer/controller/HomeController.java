@@ -29,8 +29,6 @@ public class HomeController {
      * 2. channel（name、icon、id）
      * 3. event（title、image、id）
      * 4. 推荐内容（商品列表）（title、price、image、id）
-     *
-     * 使用多线程并发获取各模块数据，提升接口响应速度
      */
     @RequestMapping("/index")
     public Response getHomePage(@VerifiedUser User loginUser) {

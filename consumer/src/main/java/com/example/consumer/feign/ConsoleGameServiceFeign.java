@@ -14,7 +14,6 @@ import java.util.List;
 
 /**
  * 游戏服务Feign客户端接口
- * 用于调用game-service中的游戏相关服务
  */
 @FeignClient(name = "provider", contextId = "consoleGameServiceFeign", path = "/console/game")
 public interface ConsoleGameServiceFeign {

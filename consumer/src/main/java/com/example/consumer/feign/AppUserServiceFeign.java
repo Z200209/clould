@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 /**
  * 用户服务Feign客户端
  * 用于调用用户微服务的远程接口
- * 严格按照provider接口定义
  */
 @FeignClient(name = "provider" , contextId = "appUserServiceFeign", path = "/app/user")
 public interface AppUserServiceFeign {
