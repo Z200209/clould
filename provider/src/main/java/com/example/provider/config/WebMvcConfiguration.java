@@ -56,12 +56,15 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
         public Object resolveArgument(@NotNull MethodParameter parameter,
                                       ModelAndViewContainer mavContainer,
                                       @NotNull NativeWebRequest webRequest,
-                                      WebDataBinderFactory binderFactory) throws Exception {
+                                      WebDataBinderFactory binderFactory) {
             try {
                 // 从请求头中获取用户ID
                 HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
-                String userIdHeader = request.getHeader("X-User-Id");
-                
+                String userIdHeader = null;
+                if (request != null) {
+                    userIdHeader = request.getHeader("X-User-Id");
+                }
+
                 if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
                     log.warn("Provider端未接收到用户ID信息");
                     return null;

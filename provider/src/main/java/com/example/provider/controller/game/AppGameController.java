@@ -1,9 +1,7 @@
 package com.example.provider.controller.game;
 
 import com.alibaba.fastjson.JSON;
-import com.example.common.annotations.VerifiedUser;
 import com.example.common.entity.*;
-import com.example.common.utils.Response;
 import com.example.provider.controller.domain.game.*;
 import com.example.provider.service.game.GameService;
 import com.example.provider.service.game.TagService;
@@ -47,29 +45,16 @@ public class AppGameController {
      * 获取游戏详情
      */
     @RequestMapping("/info")
-    public Response gameInfo(@VerifiedUser User loginUser,
-                             @RequestParam(name = "gameId") BigInteger gameId) {
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("用户未登录");
-            return new Response(1002);
-        }
-
-        log.info("用户 {} 请求游戏详情，gameId: {}", loginUser.getId(), gameId);
-
-
-        // 获取游戏信息
+    public GameInfoVO gameInfo(@RequestParam(name = "gameId") BigInteger gameId) {
         Game game;
         try {
             game = gameService.getById(gameId);
         } catch (Exception e) {
-            log.error("获取游戏信息失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取游戏信息失败");
         }
 
         if (game == null) {
-            log.info("未找到游戏信息：{}", gameId);
-            return new Response(4004);
+            throw new RuntimeException("未找到游戏信息");
         }
 
         // 获取类型信息
@@ -86,7 +71,6 @@ public class AppGameController {
                 }
             } catch (Exception e) {
                 log.error("获取游戏类型失败: {}", e.getMessage(), e);
-                // 继续处理，类型不是必须的
             }
         }
         List<Tag> tag = tagService.getTagsByGameId(gameId);
@@ -115,28 +99,19 @@ public class AppGameController {
             gameInfo.setGameIntroduction(introductionList);
         }
         catch (Exception e) {
-            log.error("解析游戏介绍失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("解析游戏介绍失败");
+
         }
-        return new Response(1001, gameInfo);
+        return gameInfo;
     }
 
     /**
      * 获取游戏列表
      */
     @RequestMapping("/list")
-    public Response gameList(@VerifiedUser User loginUser,
-                             @RequestParam(name = "keyword", required=false) String keyword,
+    public GameListVO gameList(@RequestParam(name = "keyword", required=false) String keyword,
                              @RequestParam(name = "typeId", required=false) BigInteger typeId,
                              @RequestParam(name = "wp", required=false) String wp) {
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("用户未登录");
-            return new Response<>(1002);
-        }
-
-        log.info("用户 {} 请求游戏列表，keyword: {}, typeId: {}", loginUser.getId(), keyword, typeId);
-
         int currentPageSize = 10;
         Integer currentPage;
 
@@ -149,15 +124,14 @@ public class AppGameController {
                 currentPage = receiveWp.getPage();
 
                 if (currentPage == 1) {
-                    return new Response<>(4005);
+                    throw new RuntimeException("wp的页码参数不能为1");
                 }
 
                 currentPageSize = receiveWp.getPageSize();
                 keyword = receiveWp.getKeyword();
                 typeId = receiveWp.getTypeId();
             } catch (Exception e) {
-                log.error("解析wp参数失败: {}", e.getMessage(), e);
-                return new Response(4004);
+                throw new RuntimeException("解析wp参数失败");
             }
         } else {
             currentPage = 1;
@@ -168,18 +142,15 @@ public class AppGameController {
                 (keyword != null ? keyword : "") + "-" +
                 (typeId != null ? typeId.toString() : "") + "-" +
                 currentPage;
-
-        log.info("用户 {} 请求游戏列表，keyword: {}, typeId: {}, page: {}, cacheKey: {}", loginUser.getId(), keyword, typeId, currentPage, cacheKey);
-
         // 尝试从缓存获取数据
         try {
-            Object cachedResult = redisTemplate.opsForValue().get(cacheKey);
+            GameListVO cachedResult = (GameListVO) redisTemplate.opsForValue().get(cacheKey);
             if (cachedResult != null) {
                 log.info("从缓存获取游戏列表数据，缓存键: {}", cacheKey);
-                return new Response(1001, cachedResult);
+                return cachedResult;
             }
         } catch (Exception e) {
-            log.warn("从缓存获取数据失败: {}", e.getMessage());
+            log.info("从缓存获取数据失败: {}", e.getMessage());
             // 继续执行数据库查询
         }
 
@@ -189,7 +160,7 @@ public class AppGameController {
             gameList = gameService.getAllGame(currentPage, currentPageSize, keyword, typeId);
         } catch (Exception e) {
             log.error("获取游戏列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            return null;
         }
 
         // 收集类型ID
@@ -210,7 +181,7 @@ public class AppGameController {
                     typeMap.put(type.getId(), type.getTypeName());
                 }
             } catch (Exception e) {
-                log.error("获取类型信息失败: {}", e.getMessage(), e);
+                log.info("获取类型信息失败: {}", e.getMessage(), e);
                 // 继续处理，类型不是必须的
             }
         }
@@ -227,8 +198,7 @@ public class AppGameController {
         try {
             encodeWp = Base64.getUrlEncoder().encodeToString(JSON.toJSONString(outputWp).getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            log.error("编码wp失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("编码wp失败");
         }
 
         // 构建游戏列表数据
@@ -285,11 +255,11 @@ public class AppGameController {
             redisTemplate.opsForValue().set(cacheKey, result, Duration.ofMinutes(30));
             log.info("游戏列表数据已存入缓存，缓存键: {}", cacheKey);
         } catch (Exception e) {
-            log.warn("存储缓存失败: {}", e.getMessage());
+            log.info("存储缓存失败: {}", e.getMessage());
             // 不影响正常返回
         }
         
-        return new Response(1001, result);
+        return result;
     }
 }
 

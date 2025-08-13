@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigInteger;
 import java.util.Base64;
 
 /**
@@ -33,13 +34,13 @@ public class ConsoleUserController {
      * 用户登录
      */
     @RequestMapping("/login")
-    public Response login(@RequestParam(name = "phone") String phone,
+    public String login(@RequestParam(name = "phone") String phone,
                           @RequestParam(name = "password") String password) {
         // 参数验证
         password = password.trim();
         phone = phone.trim();
         if (phone.isEmpty() || password.isEmpty()) {
-            return new Response(4005);
+            throw new RuntimeException("参数错误");
         }
 
         // 验证手机号是否存在
@@ -47,12 +48,11 @@ public class ConsoleUserController {
         try {
             user = userService.getUserByPhone(phone);
         } catch (Exception e) {
-            log.error("查询用户信息失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("查询用户信息失败: {}",e);
         }
 
         if (user == null) {
-            return new Response(2014);
+            throw new RuntimeException("手机号不存在");
         }
 
         // 验证密码
@@ -60,12 +60,11 @@ public class ConsoleUserController {
         try {
             passwordMatches = new BCryptPasswordEncoder().matches(password, user.getPassword());
         } catch (Exception e) {
-            log.error("密码验证失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("密码验证失败: {}", e);
         }
 
         if (!passwordMatches) {
-            return new Response(1010);
+            throw new RuntimeException("密码错误");
         }
 
         // 生成签名
@@ -80,8 +79,7 @@ public class ConsoleUserController {
                     JSON.toJSONString(sign).getBytes()
             );
         } catch (Exception e) {
-            log.error("生成Token失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("生成Token失败: {}", e);
         }
 
         Cookie cookie = new Cookie("auth_token", token);
@@ -89,17 +87,63 @@ public class ConsoleUserController {
         cookie.setPath("/");
         cookie.setHttpOnly(true);
 
-
-        return new Response(1001 , token);
-
+        return token;
     }
-    @RequestMapping("/info")
-    public Response getUserInfo(User loginUser) {
-        // 验证用户是否登录
-        if (loginUser == null) {
-            return new Response(1002);
+
+    @RequestMapping("/register")
+    public boolean register(@RequestParam(name = "phone") String phone,
+                            @RequestParam(name = "password") String password,
+                            @RequestParam(name = "name") String name,
+                            @RequestParam(name = "avatar") String avatar) {
+        // 参数验证
+        phone = phone.trim();
+        password = password.trim();
+        if (phone.isEmpty() || password.isEmpty() || name == null || avatar == null) {
+            throw new RuntimeException("缺少参数");
         }
-        
+
+        // 验证手机号是否已存在
+        User existingUser;
+        try {
+            existingUser = userService.getUserByPhone(phone);
+        } catch (Exception e) {
+            throw new RuntimeException("查询用户是否存在失败: {}", e);
+        }
+
+        if (existingUser != null) {
+            throw new RuntimeException("用户已存在");
+        }
+
+        // 注册用户
+        int result;
+        try {
+            result = userService.register(phone, password, name, avatar);
+        } catch (Exception e) {
+            throw new RuntimeException("注册用户失败: {}", e);
+        }
+
+        if (result == 1) {
+            return true;
+        } else {
+            throw new RuntimeException("注册失败");
+        }
+    }
+
+    @RequestMapping("/info")
+    public UserInfoVO getUserInfo(@RequestParam(name = "userId") BigInteger userId) {
+        // 验证用户是否登录
+        if (userId == null) {
+            throw new RuntimeException("用户未登录");
+        }
+        User loginUser;
+        try {
+            loginUser = userService.getUserById(userId);
+            if (loginUser == null) {
+                throw new RuntimeException("用户不存在");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("用户信息获取失败: {}", e);
+        }
         // 构建用户信息对象
         UserInfoVO userInfo = new UserInfoVO();
         userInfo.setId(loginUser.getId());
@@ -107,14 +151,14 @@ public class ConsoleUserController {
         userInfo.setName(loginUser.getName());
         userInfo.setAvatar(loginUser.getAvatar());
 
-        return new Response(1001, userInfo);
+        return userInfo;
     }
     
     /**
      * 退出登录
      */
     @RequestMapping("/logout")
-    public Response logout(HttpServletResponse response) {
+    public boolean logout(HttpServletResponse response) {
 
             // 清除Cookie
             Cookie cookie = new Cookie("auth_token", null);
@@ -122,7 +166,7 @@ public class ConsoleUserController {
             cookie.setPath("/");
             response.addCookie(cookie);
 
-            return new Response(1001);
+            return true;
     }
 
 }

@@ -1,11 +1,7 @@
 package com.example.provider.controller.game;
 
-
-import com.example.common.annotations.VerifiedUser;
 import com.example.common.entity.Game;
 import com.example.common.entity.Type;
-import com.example.common.entity.User;
-import com.example.common.utils.Response;
 import com.example.provider.controller.domain.game.ChildreGameVO;
 import com.example.provider.controller.domain.game.ChildrenListVO;
 import com.example.provider.controller.domain.game.ChildrenVO;
@@ -40,25 +36,17 @@ public class AppTypeController {
      * 获取类型列表
      */
     @RequestMapping("/list")
-    public Response typeList(@VerifiedUser User loginUser,
-                             @RequestParam(name = "keyword", required=false) String keyword) {
-        // 用户验证
-        if (loginUser == null) {
-            return new Response(1002);
-        }
-        
+    public List<TypeVO> typeList(@RequestParam(name = "keyword", required=false) String keyword) {
         // 获取类型列表
         List<Type> typeList;
         try {
             typeList = typeService.getParentTypeList(keyword);
         } catch (Exception e) {
-            log.error("获取类型列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取类型列表失败");
         }
         
         if (typeList.isEmpty()) {
-            log.info("没有找到类型信息");
-            return new Response(4006);
+            throw new RuntimeException("没有找到类型信息");
         }
         
         // 构建返回数据
@@ -78,7 +66,6 @@ public class AppTypeController {
                 }
             } catch (Exception e) {
                 log.error("获取子类型列表失败: {}", e.getMessage(), e);
-                // 继续处理，子类型不是必须的
             }
             
             typeVO.setTypeId(type.getId())
@@ -88,27 +75,20 @@ public class AppTypeController {
             typeVOList.add(typeVO);
         }
         
-        return new Response(1001, typeVOList);
+        return typeVOList;
     }
 
     /**
      * 获取子类型列表和对应游戏列表
      */
     @RequestMapping("/childrenList")
-    public Response childrenList(@VerifiedUser User loginUser,
-                                 @RequestParam(name = "typeId") BigInteger typeId) {
-        // 用户验证
-        if (loginUser == null) {
-            return new Response(1002);
-        }
-        
+    public ChildrenListVO childrenList(@RequestParam(name = "typeId") BigInteger typeId) {
         // 获取子类型列表
         List<Type> childrenList;
         try {
             childrenList = typeService.getChildrenList(typeId);
         } catch (Exception e) {
-            log.error("获取子类型列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取子类型列表失败: {}");
         }
         
         List<ChildrenVO> childrenVOList = new ArrayList<>();
@@ -130,8 +110,8 @@ public class AppTypeController {
         try {
             gamesByType = gameService.getAllGameByTypeId(typeId);
         } catch (Exception e) {
-            log.error("获取游戏列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取游戏列表失败");
+
         }
         
         List<ChildreGameVO> childreGameVOList = new ArrayList<>();
@@ -157,15 +137,13 @@ public class AppTypeController {
                 childreGameVOList.add(childreGameVO);
             } catch (Exception e) {
                 log.error("获取游戏类型失败: {}", e.getMessage(), e);
-                // 继续处理下一个游戏
             }
         }
         
         // 构建返回对象
-        ChildrenListVO result = new ChildrenListVO()
+
+        return new ChildrenListVO()
                 .setChildrenList(childrenVOList)
                 .setGameList(childreGameVOList);
-        
-        return new Response(1001, result);
     }
 }

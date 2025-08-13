@@ -1,13 +1,10 @@
 package com.example.provider.controller.game;
 
 
-import com.example.common.annotations.VerifiedUser;
 import com.example.common.dto.TypeListVO;
 import com.example.common.entity.Game;
 import com.example.common.entity.Type;
-import com.example.common.entity.User;
 import com.example.common.utils.BaseUtils;
-import com.example.common.utils.Response;
 import com.example.provider.controller.domain.game.TypeDetailVO;
 import com.example.provider.controller.domain.game.TypeTreeVO;
 import com.example.provider.service.game.GameService;
@@ -38,21 +35,14 @@ public class ConsoleTypeController {
      * 获取类型列表
      */
     @RequestMapping("/list")
-    public Response typeList(@VerifiedUser User loginUser,
-                             @RequestParam(name = "keyword", required=false) String keyword) {
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试获取类型列表");
-            return new Response(1002);
-        }
+    public List<TypeListVO> typeList(@RequestParam(name = "keyword", required=false) String keyword) {
         
         // 获取所有类型
         List<Type> types;
         try {
             types = typeService.getAllType(keyword);
         } catch (Exception e) {
-            log.error("获取类型列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取类型列表失败: {}",e);
         }
         
         // 构建类型列表
@@ -70,35 +60,25 @@ public class ConsoleTypeController {
                 typeList.add(typeListVO);
         }
         
-        return new Response(1001, typeList);
+        return typeList;
     }
 
     /**
      * 获取类型详情
      */
     @RequestMapping("/info")
-    public Response  typeInfo(
-            @VerifiedUser User loginUser,
-            @RequestParam(name = "typeId") BigInteger typeId) {
-        
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试获取类型详情");
-            return new Response(1002);
-        }
+    public TypeDetailVO typeInfo(@RequestParam(name = "typeId") BigInteger typeId) {
         
         // 获取类型信息
         Type type;
         try {
             type = typeService.getById(typeId);
         } catch (Exception e) {
-            log.error("获取类型详情失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取类型详情失败: {}",e);
         }
         
         if (type == null) {
-            log.info("未找到游戏类型：{}", typeId);
-            return new Response(4006);
+            throw new RuntimeException("未找到游戏类型");
         }
         
         // 格式化时间
@@ -108,8 +88,7 @@ public class ConsoleTypeController {
             formattedCreateTime = BaseUtils.timeStamp2DateGMT(type.getCreateTime(), "yyyy-MM-dd HH:mm:ss");
             formattedUpdateTime = BaseUtils.timeStamp2DateGMT(type.getUpdateTime(), "yyyy-MM-dd HH:mm:ss");
         } catch (Exception e) {
-            log.error("格式化时间失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("格式化时间失败: {}", e);
         }
         
         // 构建响应对象
@@ -121,39 +100,28 @@ public class ConsoleTypeController {
                 .setCreateTime(formattedCreateTime)
                 .setUpdateTime(formattedUpdateTime);
                 
-        return new Response(1001, typeDetailVO);
+        return  typeDetailVO;
     }
 
     /**
      * 新增类型
      */
     @RequestMapping("/create")
-    public Response createType(
-            @VerifiedUser User loginUser,
+    public BigInteger createType(
             @RequestParam(name = "typeName") String typeName,
             @RequestParam(name = "image") String image,
             @RequestParam(name = "parentId", required = false) BigInteger parentId) {
 
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试创建类型");
-            return new Response(1002);
-        }
-
-
             // 参数验证
             typeName = typeName.trim();
             if (typeName.isEmpty()) {
-                log.info("游戏类型名称不能为空字符串");
-                return new Response(4005);
+                throw new RuntimeException("游戏类型名称不能为空字符串");
             }
         try {
             // 创建类型
-            BigInteger typeId = typeService.edit(null, typeName, image, parentId);
-            return new Response(1001);
+            return typeService.edit(null, typeName, image, parentId);
         } catch (Exception e) {
-            log.error("创建类型失败", e);
-            return new Response(4004);
+            throw new RuntimeException("创建类型失败", e);
         }
     }
 
@@ -161,40 +129,29 @@ public class ConsoleTypeController {
      * 更新类型
      */
     @RequestMapping("/update")
-    public Response updateType(
-            @VerifiedUser User loginUser,
+    public boolean updateType(
             @RequestParam(name = "typeId") BigInteger typeId,
             @RequestParam(name = "typeName") String typeName,
             @RequestParam(name = "image") String image,
             @RequestParam(name = "parentId", required = false) BigInteger parentId) {
 
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试更新类型");
-            return new Response(1002);
-        }
-
-
             // 参数验证
             typeName = typeName.trim();
             if (typeName.isEmpty()) {
-                log.info("游戏类型名称不能为空字符串");
-                return new Response(4005);
+                throw new RuntimeException("游戏类型名称不能为空字符串");
             }
 
             // 检查类型是否存在
             Type type = typeService.getById(typeId);
             if (type == null) {
-                log.info("未找到游戏类型：{}", typeId);
-                return new Response(4006);
+                throw new RuntimeException("未找到游戏类型");
             }
         try {
             // 更新类型
             typeService.edit(typeId, typeName, image, parentId);
-            return new Response(1001);
+            return true;
         } catch (Exception e) {
-            log.error("更新类型失败", e);
-            return new Response(4004);
+            throw new RuntimeException("更新类型失败", e);
         }
     }
 
@@ -202,20 +159,12 @@ public class ConsoleTypeController {
      * 删除类型
      */
     @RequestMapping("/delete")
-    public Response deleteType(
-            @VerifiedUser User loginUser,
+    public boolean deleteType(
             @RequestParam(name = "typeId") BigInteger typeId) {
-        
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试删除类型");
-            return new Response(1002);
-        }
-        
+
         // 参数验证
         if (typeId == null) {
-            log.info("游戏类型ID不能为空");
-            return new Response(4005);
+            throw new RuntimeException("游戏类型ID不能为空");
         }
         
         // 检查该类型下是否有游戏
@@ -223,13 +172,11 @@ public class ConsoleTypeController {
         try {
             games = gameService.getAllGameByTypeId(typeId);
         } catch (Exception e) {
-            log.error("获取类型下游戏列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取类型下游戏列表失败: {}",e);
         }
         
         if (games != null && !games.isEmpty()) {
-            log.info("该类型下有游戏，不能删除：{}", typeId);
-            return new Response(4005);
+            throw new RuntimeException("该类型下有游戏，不能删除");
         }
         
         // 删除类型
@@ -237,14 +184,13 @@ public class ConsoleTypeController {
         try {
             result = typeService.delete(typeId);
         } catch (Exception e) {
-            log.error("删除类型失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("删除类型失败: {}",  e);
         }
         
         if (result == 1) {
-            return new Response(1001);
+            return true;
         } else {
-            return new Response(4004);
+            throw new RuntimeException("删除类型失败");
         }
     }
 
@@ -278,21 +224,14 @@ public class ConsoleTypeController {
 
 
     @RequestMapping("/tree")
-    public Response typeTree(
-            @VerifiedUser User loginUser,
+    public List<TypeTreeVO> typeTree(
             @RequestParam(name = "keyword", required = false) String keyword) {
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试获取类型树");
-            return new Response(1002);
-        }
         List<Type> rootTypes;
         try {
              rootTypes = typeService.getRootTypes();
         }
         catch (Exception e) {
-            log.error("获取根类型列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取根类型列表失败: {}", e);
         }
 
         List<TypeTreeVO> typeTreeList = new ArrayList<>();
@@ -305,7 +244,7 @@ public class ConsoleTypeController {
                 typeTreeList.add(typeTreeVO);
             }
         }
-        return new Response(1001, typeTreeList);
+        return typeTreeList;
     }
 
 

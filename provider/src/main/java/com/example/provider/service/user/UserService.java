@@ -90,17 +90,44 @@ public class UserService {
     public int updateInfo (BigInteger id,String phone, String password, String name, String avatar) {
         int time = (int) (System.currentTimeMillis() / 1000);
 
-        if (id == null || phone == null || password == null || name == null || avatar == null){
-            throw new RuntimeException("参数不能为空");
+        if (id == null){
+            throw new RuntimeException("用户ID不能为空");
         }
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        password = passwordEncoder.encode(password);
-        User user = new User().setName(name)
-                .setAvatar(avatar)
-                .setPhone(phone)
-                .setPassword(password)
-                .setId(id)
-                .setUpdateTime(time);
+        
+        // 获取现有用户信息
+        User existingUser = getUserById(id);
+        if (existingUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 只更新非null的字段
+        User user = new User().setId(id).setUpdateTime(time);
+        
+        if (phone != null && !phone.trim().isEmpty()) {
+            user.setPhone(phone.trim());
+        } else {
+            user.setPhone(existingUser.getPhone());
+        }
+        
+        if (password != null && !password.trim().isEmpty()) {
+            BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+            user.setPassword(passwordEncoder.encode(password.trim()));
+        } else {
+            user.setPassword(existingUser.getPassword());
+        }
+        
+        if (name != null) {
+            user.setName(name);
+        } else {
+            user.setName(existingUser.getName());
+        }
+        
+        if (avatar != null) {
+            user.setAvatar(avatar);
+        } else {
+            user.setAvatar(existingUser.getAvatar());
+        }
+        
         int result = update(user);
         if (result == 0){
             throw new RuntimeException("更新失败");

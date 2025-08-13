@@ -46,8 +46,7 @@ public class ConsoleGameController {
      * 创建游戏
      */
     @RequestMapping("/create")
-    public Response createGame(
-            @VerifiedUser User loginUser,
+    public BigInteger createGame(
             @RequestParam(name = "typeId", required = false) BigInteger typeId,
             @RequestParam(name = "gameName") String gameName,
             @RequestParam(name = "price") Float price,
@@ -56,34 +55,24 @@ public class ConsoleGameController {
             @RequestParam(name = "gamePublisher") String gamePublisher,
             @RequestParam(name = "images") String images,
             @RequestParam(name = "tags") String tags) {
-
-        // 验证用户是否登录
-        if (loginUser == null){
-            log.warn("未登录用户尝试创建游戏");
-            return new Response(1002);
-        }
         // 参数验证
         gameName = gameName.trim();
         gamePublisher = gamePublisher.trim();
         tags = tags.trim();
 
         if (gameName.isEmpty()) {
-            log.info("游戏名称不能为空字符串");
-            return new Response(4005);
+            throw new RuntimeException("游戏名称不能为空字符串");
         }
 
         if (price < 0) {
-            log.info("游戏价格不能为负数");
-            return new Response(4005);
+            throw new RuntimeException("游戏价格不能为负数");
         }
 
         if (gameIntroduction == null) {
-            log.info("游戏介绍不能为空字符串");
-            return new Response(4005);
+            throw new RuntimeException("游戏介绍不能为空字符串");
         }
         if(tags.isEmpty()){
-            log.info("游戏标签不能为空字符串");
-            return new Response(4005);
+            throw new RuntimeException("游戏标签不能为空字符串");
         }
 
         // 创建游戏
@@ -91,19 +80,17 @@ public class ConsoleGameController {
         try {
             gameId = gameService.edit(null, gameName, price, gameIntroduction, gameDate, gamePublisher, images, typeId, tags);
         } catch (Exception e) {
-            log.error("创建游戏失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("创建游戏失败");
         }
 
-        return new Response<>(1001, "创建成功，ID: " + gameId);
+        return gameId;
     }
 
     /**
      * 更新游戏信息
      */
     @RequestMapping("/update")
-    public Response updateGame(
-            @VerifiedUser User loginUser,
+    public boolean updateGame(
             @RequestParam(name = "gameId", required = false) BigInteger gameId,
             @RequestParam(name = "typeId", required = false) BigInteger typeId,
             @RequestParam(name = "gameName", required = false) String gameName,
@@ -114,22 +101,15 @@ public class ConsoleGameController {
             @RequestParam(name = "images", required = false) String images,
             @RequestParam(name = "tags", required = false) String tags) {
 
-        if (loginUser == null) {
-            log.warn("未登录用户尝试更新游戏");
-            return new Response(1002);
-        }
-
         // 参数验证
         if (gameId == null) {
-            log.info("游戏ID不能为空");
-            return new Response(4005);
+            throw new RuntimeException("游戏ID不能为空");
         }
 
         if (gameName != null) {
             gameName = gameName.trim();
             if (gameName.isEmpty()) {
-                log.info("游戏名称不能为空字符串");
-                return new Response(4005);
+                throw new RuntimeException("游戏名称不能为空字符串");
             }
         }
 
@@ -142,31 +122,26 @@ public class ConsoleGameController {
         }
 
         if (price != null && price < 0) {
-            log.info("游戏价格不能为负数");
-            return new Response(4005);
+            throw new RuntimeException("游戏价格不能为负数");
         }
 
         if (gameIntroduction != null && gameIntroduction.trim().isEmpty()) {
-            log.info("游戏介绍不能为空字符串");
-            return new Response(4005);
+            throw new RuntimeException("游戏介绍不能为空字符串");
         }
         // 检查游戏是否存在
         Game existingGame;
         try {
             existingGame = gameService.getById(gameId);
         } catch (Exception e) {
-            log.error("获取游戏信息失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取游戏信息失败");
         }
 
         if (existingGame == null) {
-            log.info("未找到游戏: {}", gameId);
-            return new Response(4006);
+            throw new RuntimeException("未找到游戏");
         }
         
         if (tags != null && tags.isEmpty()) {
-            log.info("游戏标签不能为空字符串");
-            return new Response(4005);
+            throw new RuntimeException("游戏标签不能为空字符串");
         }
 
         // 使用现有游戏信息作为默认值，只更新提供的参数
@@ -194,28 +169,20 @@ public class ConsoleGameController {
         try {
             gameService.edit(gameId, finalGameName, finalPrice, finalGameIntroduction, finalGameDate, finalGamePublisher, finalImages, finalTypeId, finalTags);
         } catch (Exception e) {
-            log.error("更新游戏失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("更新游戏失败");
         }
 
-        return new Response(1001);
+        return true;
     }
 
     /**
      * 获取游戏列表
      */
     @RequestMapping("/list")
-    public Response gameList(
-            @VerifiedUser User loginUser,
+    public Map<String, Object> gameList(
             @RequestParam(name = "page", defaultValue = "1") Integer page,
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "typeId", required = false) BigInteger typeId) {
-
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试获取游戏列表");
-            return new Response(1002);
-        }
 
         int pageSize = 10;
 
@@ -226,8 +193,7 @@ public class ConsoleGameController {
             gameList = gameService.getAllGame(page, pageSize, keyword, typeId);
             total = gameService.getTotalCount(keyword);
         } catch (Exception e) {
-            log.error("获取游戏列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取游戏列表失败");
         }
 
         // 收集类型ID和游戏ID
@@ -250,7 +216,7 @@ public class ConsoleGameController {
                     typeMap.put(type.getId(), type.getTypeName());
                 }
             } catch (Exception e) {
-                log.error("获取类型信息失败: {}", e.getMessage(), e);
+                log.info("获取类型信息失败: {}", e.getMessage(), e);
             }
         }
 
@@ -279,7 +245,7 @@ public class ConsoleGameController {
         result.put("page", page);
         result.put("pageSize", pageSize);
 
-        return new Response(1001, result);
+        return result;
     }
 
 
@@ -288,28 +254,18 @@ public class ConsoleGameController {
      * 获取游戏详情
      */
     @RequestMapping("/info")
-    public Response gameInfo(
-            @VerifiedUser User loginUser,
-            @RequestParam(name = "gameId") BigInteger gameId) {
-
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试获取游戏详情");
-            return new Response(1002);
-        }
+    public DetailVO gameInfo(@RequestParam(name = "gameId") BigInteger gameId) {
 
         // 获取游戏信息
         Game game;
         try {
             game = gameService.getById(gameId);
         } catch (Exception e) {
-            log.error("获取游戏详情失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取游戏详情失败");
         }
 
         if (game == null) {
-            log.info("未找到游戏信息：{}", gameId);
-            return new Response(4006);
+            throw new RuntimeException("未找到游戏信息");
         }
 
         // 格式化时间
@@ -319,8 +275,7 @@ public class ConsoleGameController {
             formattedCreateTime = BaseUtils.timeStamp2DateGMT(game.getCreateTime(), "yyyy-MM-dd HH:mm:ss");
             formattedUpdateTime = BaseUtils.timeStamp2DateGMT(game.getUpdateTime(), "yyyy-MM-dd HH:mm:ss");
         } catch (Exception e) {
-            log.error("格式化时间失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("格式化时间失败");
         }
 
         // 获取类型信息
@@ -331,14 +286,12 @@ public class ConsoleGameController {
         try {
             type = typeService.getById(typeId);
             if (type == null) {
-                log.info("未找到游戏类型：{}", typeId);
-                return new Response(4006);
+                throw new RuntimeException("未找到游戏类型");
             }
             typeName = type.getTypeName();
             typeImage = type.getImage();
         } catch (Exception e) {
-            log.error("获取游戏类型失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            throw new RuntimeException("获取游戏类型失败");
         }
 
         // 获取标签信息
@@ -397,45 +350,37 @@ public class ConsoleGameController {
                 introductionList.add(textIntro);
                 detailVO.setGameIntroduction(introductionList);
             } else {
-                return new Response(4004);
+                throw new RuntimeException("游戏介绍为空");
             }
         }
         
-        return new Response(1001, detailVO);
+        return detailVO;
     }
 
     /**
      * 删除游戏
      */
     @RequestMapping("/delete")
-    public Response deleteGame(
-            @VerifiedUser User loginUser,
+    public boolean deleteGame(
             @RequestParam(name = "gameId") BigInteger gameId) {
-        
-        // 验证用户是否登录
-        if (loginUser == null) {
-            log.warn("未登录用户尝试删除游戏");
-            return new Response(1002);
-        }
         
         try {
             // 检查游戏是否存在
             Game game = gameService.getById(gameId);
             if (game == null) {
-                log.info("未找到游戏: {}", gameId);
-                return new Response<>(4004);
+                throw new RuntimeException("未找到游戏");
             }
             
             // 删除游戏
             int result = gameService.delete(gameId);
             if (result == 1) {
-                return new Response(1001);
+                return true;
             } else {
-                return new Response(4004);
+                throw new RuntimeException("游戏删除失败");
             }
         } catch (Exception e) {
-            log.error("删除游戏失败", e);
-            return new Response(4004);
+            throw new RuntimeException("删除游戏失败", e);
+
         }
     }
 }
