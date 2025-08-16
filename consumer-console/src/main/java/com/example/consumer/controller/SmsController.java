@@ -1,11 +1,12 @@
 package com.example.consumer.controller;
 
 import com.example.common.annotations.VerifiedUser;
+import com.example.common.entity.Sms;
 import com.example.common.entity.SmsTaskCrond;
 import com.example.common.entity.User;
 import com.example.common.utils.Response;
+import com.example.consumer.controller.domain.sms.SmsVO;
 import com.example.consumer.feign.SmsServiceFeign;
-import com.example.provider.controller.domain.sms.SmsVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -46,8 +48,24 @@ public class SmsController {
             return new Response(1002);
         }
         try {
-            List<SmsVO> smsRecords = smsServiceFeign.getSmsRecords(phone);
-            return smsRecords == null? new Response(4004, "获取短信记录失败") : new Response(1001, smsRecords);
+            List<Sms> smsList = smsServiceFeign.getSmsRecords(phone);
+            List<SmsVO> smsRecords = new ArrayList<>();
+            SmsVO smsVO = null;
+            for (Sms sms : smsList) {
+                smsVO = new SmsVO()
+                        .setId(sms.getId())
+                        .setPhone(sms.getPhone())
+                        .setContent(sms.getContent())
+                        .setTemplateCode(sms.getTemplateCode())
+                        .setTemplateParam(sms.getTemplateParam())
+                        .setStatus(sms.getStatus())
+                        .setBizId(sms.getBizId())
+                        .setCreateTime(sms.getCreateTime())
+                        .setUpdateTime(sms.getUpdateTime())
+                        .setSendTime(sms.getSendTime());
+            }
+            smsRecords.add(smsVO);
+            return new Response(1001, smsRecords);
 
         } catch (Exception e) {
            log.error("获取短信记录失败", e);

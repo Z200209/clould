@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="Encoding">
+  <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8" addBOMForNewFiles="with BOM under Windows, with no BOM otherwise">
     <file url="file://$PROJECT_DIR$/commom/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/commom/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/consumer-app/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/consumer-console/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/provider/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/provider/src/main/java/com/example/provider/controller/domain/game/GameConsoleListVO.java" charset="GBK" />
     <file url="file://$PROJECT_DIR$/server/src/main/java" charset="UTF-8" />
+    <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>

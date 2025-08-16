@@ -1,20 +1,17 @@
 package com.example.provider.controller.user;
 
-import com.alibaba.fastjson.JSON;
-import com.example.provider.service.user.AuthService;
 import com.example.common.entity.Sign;
 import com.example.common.entity.User;
 import com.example.common.utils.Response;
+import com.example.provider.service.user.AuthService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 /**
  * Provider端认证控制器
@@ -25,7 +22,7 @@ import java.util.Base64;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
+    @Resource
     private AuthService authService;
 
     /**
@@ -54,7 +51,7 @@ public class AuthController {
             if (sign == null || sign.trim().isEmpty()) {
                 return new Response<>(4005, "签名参数不能为空");
             }
-            
+
             Sign result = authService.analyzeSign(sign);
             if (result != null) {
                 return new Response<>(1001, result);
@@ -75,7 +72,7 @@ public class AuthController {
             if (userId == null) {
                 return new Response<>(4005, "用户ID不能为空");
             }
-            
+
             User user = authService.getUserById(userId);
             if (user != null) {
                 return new Response<>(1001, user);
@@ -92,19 +89,19 @@ public class AuthController {
      */
     @RequestMapping("/login")
     public Response<String> login(@RequestParam("phone") String phone,
-                                 @RequestParam("password") String password) {
+                                  @RequestParam("password") String password) {
         try {
             // 参数验证
             if (phone == null || password == null) {
                 return new Response<>(4005, "手机号和密码不能为空");
             }
-            
+
             phone = phone.trim();
             password = password.trim();
             if (phone.isEmpty() || password.isEmpty()) {
                 return new Response<>(4005, "手机号和密码不能为空");
             }
-            
+
             String token = authService.login(phone, password);
             if (token != null) {
                 return new Response<>(1001, token);

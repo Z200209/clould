@@ -7,11 +7,9 @@ import com.example.common.config.mysql.DataSourceType;
 import com.example.common.dto.IntroductionDTO;
 import com.example.common.entity.Game;
 import com.example.common.entity.Type;
-
 import com.example.provider.mapper.game.GameMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +22,9 @@ public class GameService {
 
     @Resource
     private GameMapper mapper;
-    @Autowired
+    @Resource
     private TypeService typeService;
-    @Autowired
+    @Resource
     private TagService tagService;
 
 
@@ -34,7 +32,7 @@ public class GameService {
     public Game getById(BigInteger id) {
         return mapper.getById(id);
     }
-    
+
     @DataSource(DataSourceType.SLAVE)
     public Game extractById(BigInteger id) {
         return mapper.extractById(id);
@@ -45,18 +43,18 @@ public class GameService {
     public int insert(Game game) {
         return mapper.insert(game);
     }
-    
+
     @DataSource(DataSourceType.MASTER)
     @Transactional
     public int update(Game game) {
         return mapper.update(game);
     }
-    
+
     @DataSource(DataSourceType.MASTER)
     @Transactional
     public int delete(BigInteger id) {
         int time = (int) (System.currentTimeMillis() / 1000);
-        if (id == null){
+        if (id == null) {
             throw new RuntimeException("id 不能为空");
         }
         return mapper.delete(id, time);
@@ -65,17 +63,17 @@ public class GameService {
 
     @DataSource(DataSourceType.SLAVE)
     public List<Game> getAllGame(Integer page, Integer pageSize, String keyword, BigInteger typeId) {
-        List <BigInteger> typeIdList = typeService.getTypeIdList(keyword);
+        List<BigInteger> typeIdList = typeService.getTypeIdList(keyword);
         StringBuilder typeIdString = new StringBuilder();
         for (BigInteger bigInteger : typeIdList) {
-            if (!typeIdString.isEmpty()){
+            if (!typeIdString.isEmpty()) {
                 typeIdString.append(",");
             }
             typeIdString.append(bigInteger.toString());
         }
         String ids = typeIdString.toString();
 
-        return mapper.getAll((page-1) * pageSize, pageSize, keyword,typeId, ids);
+        return mapper.getAll((page - 1) * pageSize, pageSize, keyword, typeId, ids);
     }
 
     @DataSource(DataSourceType.SLAVE)
@@ -86,7 +84,7 @@ public class GameService {
 
     @DataSource(DataSourceType.MASTER)
     @Transactional
-    public BigInteger edit (BigInteger id, String gameName, Float price, String gameIntroduction, String gameDate, String gamePublisher, String images, BigInteger typeId, String tags) {
+    public BigInteger edit(BigInteger id, String gameName, Float price, String gameIntroduction, String gameDate, String gamePublisher, String images, BigInteger typeId, String tags) {
         try {
             List<IntroductionDTO> check = JSON.parseArray(gameIntroduction, IntroductionDTO.class);
             for (IntroductionDTO introductionDTO : check) {
@@ -112,13 +110,13 @@ public class GameService {
         if (images == null || images.isEmpty()) {
             throw new RuntimeException("images 不能为空");
         }
-        if(typeId != null) {
+        if (typeId != null) {
             Type type = typeService.getById(typeId);
-            if (type == null){
+            if (type == null) {
                 throw new RuntimeException("typeId不存在");
             }
         }
-        if(tags == null || tags.isEmpty()){
+        if (tags == null || tags.isEmpty()) {
             throw new RuntimeException("tags 不能为空");
         }
         int time = (int) (System.currentTimeMillis() / 1000);
@@ -131,19 +129,18 @@ public class GameService {
         game.setImages(images);
         game.setUpdateTime(time);
         game.setTypeId(typeId);
-        if (id == null){
+        if (id == null) {
             game.setCreateTime(time);
             game.setIsDeleted(0);
             int result = insert(game);
-            if (result == 0){
+            if (result == 0) {
                 throw new RuntimeException("插入失败");
             }
             id = game.getId();
-        }
-        else {
+        } else {
             game.setId(id);
             int result = update(game);
-            if (result == 0){
+            if (result == 0) {
                 throw new RuntimeException("id不存在");
             }
         }
@@ -151,7 +148,6 @@ public class GameService {
         return game.getId();
 
     }
-
 
 
     @DataSource(DataSourceType.SLAVE)

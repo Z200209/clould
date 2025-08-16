@@ -2,8 +2,6 @@ package com.example.consumer.feign;
 
 import com.example.common.annotations.VerifiedUser;
 import com.example.common.entity.User;
-import com.example.common.utils.Response;
-import com.example.provider.controller.domain.user.UserInfoVO;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,14 +9,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigInteger;
 
-@FeignClient(name="provider", contextId = "consoleUserServiceFeign", path = "/console/user")
+@FeignClient(name = "provider", contextId = "consoleUserServiceFeign", path = "/user")
 public interface ConsoleUserServiceFeign {
     @RequestMapping("/login")
     String login(@RequestParam(name = "phone") String phone,
-                   @RequestParam(name = "password") String password);
+                 @RequestParam(name = "password") String password);
 
     @RequestMapping("/info")
-    UserInfoVO getUserInfo(@RequestParam("userId") BigInteger userId);
+    User getUserInfo(@RequestParam("userId") BigInteger userId);
 
     @RequestMapping("/register")
     boolean register(@RequestParam(name = "phone") String phone,

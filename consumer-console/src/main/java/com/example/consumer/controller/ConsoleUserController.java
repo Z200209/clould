@@ -3,8 +3,9 @@ package com.example.consumer.controller;
 import com.example.common.annotations.VerifiedUser;
 import com.example.common.entity.User;
 import com.example.common.utils.Response;
+import com.example.consumer.controller.domain.user.UserInfoVO;
 import com.example.consumer.feign.ConsoleUserServiceFeign;
-import com.example.provider.controller.domain.user.UserInfoVO;
+
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,8 +42,13 @@ public class ConsoleUserController {
         }
         try {
             BigInteger userId = loginUser.getId();
-            UserInfoVO userInfo = consoleUserServiceFeign.getUserInfo(userId);
-            return userInfo == null ? new Response(4004) : new Response(1001, userInfo);
+            User user = consoleUserServiceFeign.getUserInfo(userId);
+            UserInfoVO userInfo = new UserInfoVO();
+            userInfo.setId(user.getId())
+                    .setPhone(user.getPhone())
+                    .setName(user.getName())
+                    .setAvatar(user.getAvatar());
+            return new Response(1001, userInfo);
         }catch (Exception e){
             log.error("获取用户信息失败：{}", e.getMessage());
             return new Response(4004, "获取用户信息失败");

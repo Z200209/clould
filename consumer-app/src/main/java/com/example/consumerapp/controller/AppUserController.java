@@ -4,8 +4,8 @@ import com.example.common.annotations.VerifiedUser;
 import com.example.common.entity.User;
 import com.example.common.utils.Response;
 
+import com.example.consumerapp.controller.domain.user.UserInfoVO;
 import com.example.consumerapp.feign.AppUserServiceFeign;
-import com.example.provider.controller.domain.user.UserInfoVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,12 +57,11 @@ public class AppUserController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "avatar", required = false) String avatar) {
         if (loginUser == null) {
-            return new Response(1002);
+            return new Response<>(1002);
         }
-        BigInteger userId = loginUser.getId();
         try {
-        boolean result =  appUserServiceFeign.updateUser(userId,phone, password, name, avatar);
-        return result ? new Response(1001) : new Response(4004);
+        boolean result =  appUserServiceFeign.update(loginUser,phone, password, name, avatar);
+        return result ? new Response<>(1001) : new Response<>(4004);
     }
         catch (Exception e) {
             log.error("更新用户信息失败：{}", e.getMessage());
@@ -79,7 +78,12 @@ public class AppUserController {
         }
         BigInteger userId = loginUser.getId();
         try {
-        UserInfoVO userInfo = appUserServiceFeign.getUserInfo(userId);
+        User user = appUserServiceFeign.getUserInfo(userId);
+        UserInfoVO userInfo = new UserInfoVO()
+                .setId(user.getId())
+                .setPhone(user.getPhone())
+                .setName(user.getName())
+                .setAvatar(user.getAvatar());
         return new Response<>(1001, userInfo);
     } catch (Exception e) {
             log.error("获取用户信息失败：{}", e.getMessage());

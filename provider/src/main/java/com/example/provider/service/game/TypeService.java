@@ -26,7 +26,7 @@ public class TypeService {
     public List<Type> getTypeByIds(Set<BigInteger> typeIdSet) {
         StringBuilder typeIdList = new StringBuilder();
         for (BigInteger bigInteger : typeIdSet) {
-            if (!typeIdList.isEmpty()){
+            if (!typeIdList.isEmpty()) {
                 typeIdList.append(",");
             }
             typeIdList.append(bigInteger.toString());
@@ -35,7 +35,6 @@ public class TypeService {
 
         return mapper.getTypeByIds(ids);
     }
-
 
 
     @DataSource(DataSourceType.SLAVE)
@@ -54,11 +53,11 @@ public class TypeService {
     public int update(Type type) {
         return mapper.update(type);
     }
-    
+
     @DataSource(DataSourceType.MASTER)
     @Transactional
     public int delete(BigInteger id) {
-        if (id == null){
+        if (id == null) {
             throw new RuntimeException("id 不能为空");
         }
         int time = (int) (System.currentTimeMillis() / 1000);
@@ -71,7 +70,7 @@ public class TypeService {
     }
 
     @DataSource(DataSourceType.SLAVE)
-    public List<Type> getParentTypeList( String keyword) {
+    public List<Type> getParentTypeList(String keyword) {
         return mapper.getParentTypeList(keyword);
     }
 
@@ -84,10 +83,10 @@ public class TypeService {
     public Integer getTotalCount(String keyword) {
         return mapper.getTotalCount(keyword);
     }
-    
+
     @DataSource(DataSourceType.MASTER)
     @Transactional
-    public BigInteger edit (BigInteger id, String typeName,String image,BigInteger parentId) {
+    public BigInteger edit(BigInteger id, String typeName, String image, BigInteger parentId) {
         if (typeName == null || typeName.isEmpty()) {
             throw new RuntimeException("typeName 不能为空");
         }
@@ -100,18 +99,17 @@ public class TypeService {
         type.setParentId(parentId);
         type.setImage(image);
         type.setUpdateTime(time);
-        if (id == null){
+        if (id == null) {
             type.setCreateTime(time);
             type.setIsDeleted(0);
             int result = insert(type);
-            if (result == 0){
+            if (result == 0) {
                 throw new RuntimeException("插入失败");
             }
-        }
-        else {
+        } else {
             type.setId(id);
             int result = update(type);
-            if (result == 0){
+            if (result == 0) {
                 throw new RuntimeException("更新失败");
             }
 

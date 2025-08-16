@@ -94,7 +94,7 @@ public class RedisSentinelConfig {
     /**
      * 配置Redis哨兵连接工厂
      * 支持主从自动切换和故障转移
-     * 
+     *
      * @return Redis连接工厂实例
      */
     @Bean(name = "redisSentinelConnectionFactory")
@@ -102,7 +102,7 @@ public class RedisSentinelConfig {
         // 配置哨兵节点
         RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration();
         sentinelConfig.master(masterName);
-        
+
         // 解析并添加哨兵节点
         Set<RedisNode> sentinelHostAndPorts = new HashSet<>();
         String[] nodes = sentinelNodes.split(",");
@@ -115,20 +115,20 @@ public class RedisSentinelConfig {
             }
         }
         sentinelConfig.setSentinels(sentinelHostAndPorts);
-        
+
         // 设置Redis主从密码
         if (password != null && !password.isEmpty()) {
             sentinelConfig.setPassword(password);
         }
-        
+
         // 设置哨兵密码
         if (sentinelPassword != null && !sentinelPassword.isEmpty()) {
             sentinelConfig.setSentinelPassword(sentinelPassword);
         }
-        
+
         // 设置数据库索引
         sentinelConfig.setDatabase(database);
-        
+
         // 配置Jedis连接池
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(maxActive);
@@ -138,50 +138,50 @@ public class RedisSentinelConfig {
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);
-        
+
         // 创建Jedis连接工厂
         JedisConnectionFactory factory = new JedisConnectionFactory(sentinelConfig, poolConfig);
         factory.setTimeout(timeout);
         factory.afterPropertiesSet();
-        
+
         return factory;
     }
 
     /**
      * 配置RedisTemplate
      * 设置键值序列化方式，支持字符串键和JSON值
-     * 
+     *
      * @param connectionFactory Redis连接工厂
      * @return 配置好的RedisTemplate实例
      */
     @Bean(name = "redisSentinelTemplate")
     public RedisTemplate<String, Object> redisSentinelTemplate(
             RedisConnectionFactory connectionFactory) {
-        
+
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
+
         // 设置键的序列化方式为字符串
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);
         template.setHashKeySerializer(stringSerializer);
-        
+
         // 设置值的序列化方式为JSON
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
         template.setValueSerializer(jsonSerializer);
         template.setHashValueSerializer(jsonSerializer);
-        
+
         // 启用事务支持
         template.setEnableTransactionSupport(true);
         template.afterPropertiesSet();
-        
+
         return template;
     }
 
     /**
      * 配置从库读取的RedisTemplate
      * 用于读写分离，优先从从库读取数据
-     * 
+     *
      * @return 从库读取RedisTemplate实例
      */
     @Bean(name = "redisSlaveTemplate")
@@ -190,23 +190,23 @@ public class RedisSentinelConfig {
             // 如果未启用读写分离，返回主库模板
             return redisSentinelTemplate(redisSentinelConnectionFactory());
         }
-        
+
         // 配置从库连接工厂
         RedisConnectionFactory slaveConnectionFactory = createSlaveConnectionFactory();
         return redisSentinelTemplate(slaveConnectionFactory);
     }
-    
+
     /**
      * 创建从库连接工厂
      * 配置为优先从从库读取
-     * 
+     *
      * @return 从库连接工厂
      */
     private RedisConnectionFactory createSlaveConnectionFactory() {
         // 配置哨兵节点
         RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration();
         sentinelConfig.master(masterName);
-        
+
         // 解析并添加哨兵节点
         Set<RedisNode> sentinelHostAndPorts = new HashSet<>();
         String[] nodes = sentinelNodes.split(",");
@@ -219,20 +219,20 @@ public class RedisSentinelConfig {
             }
         }
         sentinelConfig.setSentinels(sentinelHostAndPorts);
-        
+
         // 设置Redis主从密码
         if (password != null && !password.isEmpty()) {
             sentinelConfig.setPassword(password);
         }
-        
+
         // 设置哨兵密码
         if (sentinelPassword != null && !sentinelPassword.isEmpty()) {
             sentinelConfig.setSentinelPassword(sentinelPassword);
         }
-        
+
         // 设置数据库索引
         sentinelConfig.setDatabase(database);
-        
+
         // 配置Jedis连接池（从库优化配置）
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(maxActive);
@@ -242,20 +242,20 @@ public class RedisSentinelConfig {
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);
-        
+
         // 创建Jedis连接工厂（从库读取配置）
         JedisConnectionFactory factory = new JedisConnectionFactory(sentinelConfig, poolConfig);
         factory.setTimeout(timeout);
         factory.setUsePool(true);
         factory.afterPropertiesSet();
-        
+
         return factory;
     }
 
     /**
      * 配置默认的RedisTemplate（兼容性）
      * 使用哨兵模式的连接工厂
-     * 
+     *
      * @return 默认RedisTemplate实例
      */
     @Bean

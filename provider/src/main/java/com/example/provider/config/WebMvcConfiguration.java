@@ -3,10 +3,10 @@ package com.example.provider.config;
 import com.example.common.annotations.VerifiedUser;
 import com.example.common.entity.User;
 import com.example.provider.service.user.AuthService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -24,34 +24,34 @@ import java.util.List;
  */
 @Configuration
 public class WebMvcConfiguration implements WebMvcConfigurer {
-    
-    @Autowired
+
+    @Resource
     private AuthService authService;
-    
+
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(new ProviderUserAuthorityResolver(authService));
     }
-    
+
     /**
      * Provider端用户参数解析器
      * 从Consumer端传递的请求头中获取用户ID，然后查询用户信息
      */
     @Slf4j
     public static class ProviderUserAuthorityResolver implements HandlerMethodArgumentResolver {
-        
+
         private final AuthService authService;
-        
+
         public ProviderUserAuthorityResolver(AuthService authService) {
             this.authService = authService;
         }
-        
+
         @Override
         public boolean supportsParameter(MethodParameter parameter) {
-            return parameter.hasParameterAnnotation(VerifiedUser.class) && 
-                   parameter.getParameterType().equals(User.class);
+            return parameter.hasParameterAnnotation(VerifiedUser.class) &&
+                    parameter.getParameterType().equals(User.class);
         }
-        
+
         @Override
         public Object resolveArgument(@NotNull MethodParameter parameter,
                                       ModelAndViewContainer mavContainer,
@@ -69,17 +69,17 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
                     log.warn("Provider端未接收到用户ID信息");
                     return null;
                 }
-                
+
                 // 解析用户ID并获取用户信息
                 BigInteger userId = new BigInteger(userIdHeader.trim());
                 User user = authService.getUserById(userId);
-                
+
                 if (user != null) {
                     log.debug("Provider端成功获取用户信息: userId={}, phone={}", user.getId(), user.getPhone());
                 } else {
                     log.warn("Provider端未找到用户信息: userId={}", userId);
                 }
-                
+
                 return user;
             } catch (Exception e) {
                 log.error("Provider端解析用户信息失败", e);

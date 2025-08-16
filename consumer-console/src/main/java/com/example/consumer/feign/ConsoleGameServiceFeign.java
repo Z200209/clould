@@ -1,23 +1,39 @@
 package com.example.consumer.feign;
 
-
-import com.example.common.dto.TypeListVO;
-import com.example.provider.controller.domain.game.DetailVO;
-import com.example.provider.controller.domain.game.TypeDetailVO;
-import com.example.provider.controller.domain.game.TypeTreeVO;
+import com.example.common.entity.Game;
+import com.example.common.entity.Type;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * 游戏服务Feign客户端接口
  */
-@FeignClient(name = "provider", contextId = "consoleGameServiceFeign", path = "/console/game")
+@FeignClient(name = "provider", contextId = "consoleGameServiceFeign", path = "/game")
 public interface ConsoleGameServiceFeign {
+    /**
+     * 获取游戏信息
+     *
+     * @param gameId
+     * @return
+     */
+    @RequestMapping("/info")
+    Game gameInfo(
+            @RequestParam(name = "gameId") BigInteger gameId);
+
+    /**
+     * 获取游戏列表
+     */
+    @RequestMapping("/list")
+    List<Game> gameList(
+            @RequestParam(name = "page", defaultValue = "1") Integer page,
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "typeId", required = false) BigInteger typeI);
+
     /**
      * 创建游戏
      */
@@ -48,26 +64,10 @@ public interface ConsoleGameServiceFeign {
             @RequestParam(name = "tags", required = false) String tags
     );
 
-    /**
-     * 获取游戏列表
-     */
-    @RequestMapping("/list")
-    Map<String, Object> gameList(
-            @RequestParam(name = "page", defaultValue = "1") Integer page,
-            @RequestParam(name = "keyword", required = false) String keyword,
-            @RequestParam(name = "typeId", required = false) BigInteger typeId);
-
-    /**
-     * 获取游戏信息
-     * @param gameId
-     * @return
-     */
-    @RequestMapping("/info")
-    DetailVO gameInfo(
-            @RequestParam(name = "gameId") BigInteger gameId);
 
     /**
      * 删除游戏
+     *
      * @param gameId
      * @return
      */
@@ -76,25 +76,49 @@ public interface ConsoleGameServiceFeign {
             @RequestParam(name = "gameId") BigInteger gameId);
 
     /**
+     * 获取游戏总数
+     *
+     * @param keyword
+     * @return
+     */
+    @RequestMapping("/totalCount")
+    Integer getTotalCount(
+            @RequestParam(name = "keyword", required = false) String keyword);
+
+    /**
      * 获取类型列表
+     *
      * @param keyword
      * @return
      */
     @RequestMapping("/type/list")
-    List<TypeListVO> typeList(
-            @RequestParam(name = "keyword", required=false) String keyword);
+    List<Type> typeList(
+            @RequestParam(name = "keyword", required = false) String keyword);
 
     /**
      * 获取类型信息
+     *
      * @param typeId
      * @return
      */
     @RequestMapping("/type/info")
-    TypeDetailVO typeInfo(
+    Type typeInfo(
             @RequestParam(name = "typeId") BigInteger typeId);
 
     /**
+     * 获取类型子类型列表
+     *
+     * @param typeId
+     * @return
+     */
+    @RequestMapping("/type/childrenList")
+    List<Type> childrenList(
+            @RequestParam(name = "typeId") BigInteger typeId);
+
+
+    /**
      * 创建类型
+     *
      * @param typeName
      * @param image
      * @param parentId
@@ -108,6 +132,7 @@ public interface ConsoleGameServiceFeign {
 
     /**
      * 更新类型
+     *
      * @param typeId
      * @param typeName
      * @param image
@@ -123,6 +148,7 @@ public interface ConsoleGameServiceFeign {
 
     /**
      * 删除类型
+     *
      * @param typeId
      * @return
      */
@@ -132,11 +158,20 @@ public interface ConsoleGameServiceFeign {
 
     /**
      * 获取类型树
-     * @param keyword
+     *
      * @return
      */
-    @RequestMapping("/type/tree")
-    List<TypeTreeVO> typeTree(
-            @RequestParam(name = "keyword", required = false) String keyword);
+    @RequestMapping("/type/rootTree")
+    List<Type> rootTypes();
+
+    /**
+     * 根据类型id列表批量获取类型
+     *
+     * @param typeIds
+     * @return
+     */
+    @RequestMapping("/type/listByIds")
+    List<Type> typeListByIds(
+            @RequestParam(name = "typeIds") Set<BigInteger> typeIds);
 
 }

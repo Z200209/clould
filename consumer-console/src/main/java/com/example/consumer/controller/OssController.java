@@ -28,8 +28,8 @@ public class OssController {
             return new Response(4007);
         }
         if (!file.getContentType().startsWith("image") &&
-        !file.getContentType().startsWith("video") &&
-        !file.getContentType().startsWith("application")) {
+                !file.getContentType().startsWith("video") &&
+                !file.getContentType().startsWith("application")) {
             return new Response(4005);
         }
 
@@ -44,7 +44,7 @@ public class OssController {
 
         // 生成文件名
         String uniqueName = UUID.randomUUID().toString().replace("-", "");
-        
+
         try {
             if (file.getContentType().startsWith("image")) {
                 BufferedImage image = ImageIO.read(file.getInputStream());

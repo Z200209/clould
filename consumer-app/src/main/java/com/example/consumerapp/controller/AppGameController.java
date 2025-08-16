@@ -1,14 +1,11 @@
 package com.example.consumerapp.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.example.common.annotations.VerifiedUser;
-import com.example.common.entity.User;
+import com.example.common.entity.*;
 import com.example.common.utils.Response;
-
+import com.example.consumerapp.controller.domain.game.*;
 import com.example.consumerapp.feign.AppGameServiceFeign;
-import com.example.provider.controller.domain.game.ChildrenListVO;
-import com.example.provider.controller.domain.game.GameInfoVO;
-import com.example.provider.controller.domain.game.GameListVO;
-import com.example.provider.controller.domain.game.TypeVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigInteger;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @RestController
@@ -31,17 +31,64 @@ public class AppGameController {
         if (loginUser == null) {
             return new Response<>(1002);
         }
+        Game game;
         try {
-           GameInfoVO  gameInfo = appGameServiceFeign.getAppGameInfo(gameId);
-           if (gameInfo == null) {
-               return new Response<>(4004);
-           }
-           return new Response<>(1001, gameInfo);
+            game = appGameServiceFeign.gameInfo(gameId);
+            if (game == null) {
+                return new Response<>(4004);
+            }
         } catch (Exception e) {
             log.error("获取游戏信息失败: {}", e.getMessage(), e);
             return new Response<>(4004);
         }
+        Type type;
+        String typeName = null;
+        String typeImage = null;
 
+        List<String> tagNames = null;
+        if (game.getTypeId() != null) {
+            try {
+                type = appGameServiceFeign.typeInfo(game.getTypeId());
+                if (type == null) {
+                    log.info("未找到游戏类型：{}", game.getTypeId());
+                    return new Response(4006);
+                }
+                typeName = type.getTypeName();
+                typeImage = type.getImage();
+            } catch (Exception e) {
+                log.error("获取游戏类型失败: {}", e.getMessage(), e);
+                return new Response(4004);
+            }
+            List<Tag> tag = appGameServiceFeign.getTagsByGameId(gameId);
+            tagNames = tag.stream()
+                    .map(Tag::getName)
+                    .toList();
+        }
+
+
+        // 构建返回对象
+        GameInfoVO gameInfo = new GameInfoVO()
+                .setGameId(game.getId())
+                .setTypeName(typeName)
+                .setTypeImage(typeImage)
+                .setGameName(game.getGameName())
+                .setPrice(game.getPrice())
+                .setGameDate(game.getGameDate())
+                .setGamePublisher(game.getGamePublisher())
+                .setTags(tagNames);
+
+        // 将图片字符串按 "$" 拆分为列表
+        if (game.getImages() != null && !game.getImages().isEmpty()) {
+            gameInfo.setImages(Arrays.asList(game.getImages().split("\\$")));
+        }
+        try {
+            List<BaseIntroductionVO> introductionList = JSON.parseArray(game.getGameIntroduction(), BaseIntroductionVO.class);
+            gameInfo.setGameIntroduction(introductionList);
+        } catch (Exception e) {
+            log.error("解析游戏介绍失败: {}", e.getMessage(), e);
+            return new Response(4004);
+        }
+        return new Response(1001, gameInfo);
     }
 
     @RequestMapping("/list")
@@ -49,56 +96,156 @@ public class AppGameController {
                                    @RequestParam(name = "keyword", required = false) String keyword,
                                    @RequestParam(name = "typeId", required = false) BigInteger typeId,
                                    @RequestParam(name = "wp", required = false) String wp) {
+        // 验证用户是否登录
         if (loginUser == null) {
+            log.warn("用户未登录");
             return new Response<>(1002);
         }
-        try {
-            GameListVO gameList = appGameServiceFeign.getAppGameList(keyword, typeId, wp);
-            if (gameList == null) {
-                return new Response<>(4004);
+
+        log.info("用户 {} 请求游戏列表，keyword: {}, typeId: {}", loginUser.getId(), keyword, typeId);
+
+        int currentPageSize = 10;
+        Integer currentPage;
+
+        // 解析wp参数
+        if (wp != null && !wp.isEmpty()) {
+            try {
+                byte[] bytes = Base64.getUrlDecoder().decode(wp);
+                String json = new String(bytes, StandardCharsets.UTF_8);
+                Wp receiveWp = JSON.parseObject(json, Wp.class);
+                currentPage = receiveWp.getPage();
+
+                if (currentPage == 1) {
+                    return new Response<>(4005);
+                }
+
+                currentPageSize = receiveWp.getPageSize();
+                keyword = receiveWp.getKeyword();
+                typeId = receiveWp.getTypeId();
+            } catch (Exception e) {
+                log.error("解析wp参数失败: {}", e.getMessage(), e);
+                return new Response(4004);
             }
-            return new Response<>(1001, gameList);
+        } else {
+            currentPage = 1;
+        }
+
+        // 构建缓存键: game_list-关键词-typeId-page
+        String cacheKey = "game_list-" +
+                (keyword != null ? keyword : "") + "-" +
+                (typeId != null ? typeId.toString() : "") + "-" +
+                currentPage;
+
+        log.info("用户 {} 请求游戏列表，keyword: {}, typeId: {}, page: {}, cacheKey: {}", loginUser.getId(), keyword, typeId, currentPage, cacheKey);
+
+        Object cachedResult = appGameServiceFeign.gameList(currentPage, keyword, typeId);
+        if (cachedResult != null) {
+            return new Response(1001, cachedResult);
+        }
+        // 获取游戏列表
+        List<Game> gameList;
+        try {
+            gameList = appGameServiceFeign.gameList(currentPage, keyword, typeId);
         } catch (Exception e) {
             log.error("获取游戏列表失败: {}", e.getMessage(), e);
             return new Response(4004);
         }
 
-    }
-
-    @RequestMapping("/type/list")
-    public Response<List<TypeVO>> getAppGameTypeList(@VerifiedUser User loginUser,
-                                       @RequestParam(name = "keyword", required = false) String keyword) {
-        if (loginUser == null) {
-            return new Response<>(1002);
-        }
-        try {
-            List<TypeVO> typeList = appGameServiceFeign.getAppGameTypeList(keyword);
-            if (typeList == null) {
-                return new Response<>(4004);
+        // 收集类型ID
+        Set<BigInteger> typeIdSet = new HashSet<>();
+        for (Game game : gameList) {
+            BigInteger tid = game.getTypeId();
+            if (tid != null) {
+                typeIdSet.add(tid);
             }
-            return new Response<>(1001, typeList);
+        }
+
+        // 获取类型信息
+        Map<BigInteger, String> typeMap = new HashMap<>();
+        if (!typeIdSet.isEmpty()) {
+            try {
+                List<Type> types = appGameServiceFeign.typeListByIds(typeIdSet);
+                for (Type type : types) {
+                    typeMap.put(type.getId(), type.getTypeName());
+                }
+            } catch (Exception e) {
+                log.error("获取类型信息失败: {}", e.getMessage(), e);
+                // 继续处理，类型不是必须的
+            }
+        }
+
+        // 构建输出的wp对象
+        Wp outputWp = new Wp();
+        outputWp.setKeyword(keyword)
+                .setTypeId(typeId)
+                .setPage(currentPage + 1)
+                .setPageSize(currentPageSize);
+
+        // 编码wp
+        String encodeWp;
+        try {
+            encodeWp = Base64.getUrlEncoder().encodeToString(JSON.toJSONString(outputWp).getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            log.error("获取游戏类型列表失败: {}", e.getMessage(), e);
+            log.error("编码wp失败: {}", e.getMessage(), e);
             return new Response(4004);
         }
-    }
 
-    @RequestMapping("/type/childrenList")
-    public Response getAppGameTypeChildren(@VerifiedUser User loginUser,
-                                          @RequestParam(name = "typeId") BigInteger typeId) {
-        if (loginUser == null) {
-            return new Response<>(1002);
+        // 构建游戏列表数据
+        List<GameVO> gameVOList = new ArrayList<>();
+        for (Game game : gameList) {
+            if (game.getTypeId() == null || game.getImages() == null || game.getImages().isEmpty()) {
+                log.info("游戏数据不完整，跳过：{}", game.getId());
+                continue;
+            }
+
+            String typeName = typeMap.get(game.getTypeId());
+            if (typeName == null) {
+                log.info("未找到游戏类型名称：{}", game.getTypeId());
+                continue;
+            }
+
+            String image = game.getImages().split("\\$")[0];
+
+            // 计算图片宽高比
+            float ar = 0;
+            try {
+                String regex = ".*_(\\d+)x(\\d+)\\.png";
+                Pattern pattern = Pattern.compile(regex);
+                Matcher matcher = pattern.matcher(image);
+                if (matcher.find()) {
+                    int width = Integer.parseInt(matcher.group(1));
+                    int height = Integer.parseInt(matcher.group(2));
+                    ar = (float) width / height;
+                }
+            } catch (Exception e) {
+                log.info("解析图片尺寸失败: {}", e.getMessage());
+                // 继续处理，宽高比不是必须的
+            }
+
+            ImageVO imageVO = new ImageVO()
+                    .setSrc(image)
+                    .setAr(ar);
+
+            GameVO gameVO = new GameVO()
+                    .setGameId(game.getId())
+                    .setGameName(game.getGameName())
+                    .setTypeName(typeName)
+                    .setImage(imageVO);
+
+            gameVOList.add(gameVO);
         }
+
+        // 构建最终响应对象
+        GameListVO result = new GameListVO()
+                .setGameList(gameVOList)
+                .setWp(encodeWp);
 
         try {
-            ChildrenListVO childrenList = appGameServiceFeign.getAppGameTypeChildren(loginUser, typeId);
-            if (childrenList == null) {
-                return new Response<>(4004);
-            }
-            return new Response(1001, childrenList);
+            appGameServiceFeign.listIntoRedis(cacheKey, result);
         } catch (Exception e) {
-            log.error("获取游戏类型子类型列表失败: {}", e.getMessage(), e);
-            return new Response(4004);
+            log.warn("存储缓存失败: {}", e.getMessage());
         }
+
+        return new Response(1001, result);
     }
 }

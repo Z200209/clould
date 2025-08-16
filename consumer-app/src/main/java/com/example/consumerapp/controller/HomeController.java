@@ -40,12 +40,12 @@ public class HomeController {
             long endTime = System.currentTimeMillis();
             log.info("首页数据获取成功，耗时: {}ms", endTime - startTime);
 
-            return new Response(1001,  homeData);
+            return new Response<>(1001,  homeData);
 
         } catch (Exception e) {
             long endTime = System.currentTimeMillis();
             log.error("获取首页数据失败，耗时: {}ms", endTime - startTime, e);
-            return new Response(4004);
+            return new Response<>(4004);
         }
     }
 

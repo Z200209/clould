@@ -5,10 +5,10 @@ import com.example.common.annotations.DataSource;
 import com.example.common.config.mysql.DataSourceType;
 import com.example.common.entity.Sign;
 import com.example.common.entity.User;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -23,7 +23,7 @@ import java.util.Base64;
 @Service
 public class AuthService {
 
-    @Autowired
+    @Resource
     private UserService userService;
 
     /**
@@ -117,7 +117,7 @@ public class AuthService {
         }
         int currentTime = (int) (System.currentTimeMillis() / 1000);
         boolean expired = sign.getExpirationTime() < currentTime;
-        log.info("签名过期检查: currentTime={}, expirationTime={}, expired={}", 
+        log.info("签名过期检查: currentTime={}, expirationTime={}, expired={}",
                 currentTime, sign.getExpirationTime(), expired);
         return expired;
     }

@@ -40,11 +40,11 @@ public interface AuthServiceFeign {
      * 用户登录
      * 调用Provider端的登录服务
      *
-     * @param phone 手机号
+     * @param phone    手机号
      * @param password 密码
      * @return 登录结果，成功时返回token
      */
     @RequestMapping("/login")
     Response<String> login(@RequestParam("phone") String phone,
-                          @RequestParam("password") String password);
+                           @RequestParam("password") String password);
 }

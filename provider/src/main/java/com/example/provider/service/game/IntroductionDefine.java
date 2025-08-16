@@ -1,25 +1,20 @@
 package com.example.provider.service.game;
 
+import lombok.Getter;
 
+
+@Getter
 public enum IntroductionDefine {
-    INTRODUCTION_CONTENT_TYPE_TEXT(1,"text"),
-    INTRODUCTION_CONTENT_TYPE_IMAGE(2,"image"),
-    INTRODUCTION_CONTENT_TYPE_VIDEO(3,"video");
+    INTRODUCTION_CONTENT_TYPE_TEXT(1, "text"),
+    INTRODUCTION_CONTENT_TYPE_IMAGE(2, "image"),
+    INTRODUCTION_CONTENT_TYPE_VIDEO(3, "video");
 
-    private int code;
-    private String name;
+    private final int code;
+    private final String name;
 
-    private IntroductionDefine(int code, String name) {
+    IntroductionDefine(int code, String name) {
         this.code = code;
         this.name = name;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public String getName() {
-        return name;
     }
 
 
@@ -30,10 +25,7 @@ public enum IntroductionDefine {
         if (INTRODUCTION_CONTENT_TYPE_IMAGE.getName().equals(name)) {
             return true;
         }
-        if (INTRODUCTION_CONTENT_TYPE_VIDEO.getName().equals(name)) {
-            return true;
-        }
-        return false;
+        return INTRODUCTION_CONTENT_TYPE_VIDEO.getName().equals(name);
     }
 
 }

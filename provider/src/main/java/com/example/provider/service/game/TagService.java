@@ -4,11 +4,9 @@ package com.example.provider.service.game;
 import com.example.common.annotations.DataSource;
 import com.example.common.config.mysql.DataSourceType;
 import com.example.common.entity.Tag;
-
 import com.example.provider.mapper.game.TagMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +22,7 @@ public class TagService {
     @Resource
     private TagMapper mapper;
 
-    @Autowired
+    @Resource
     private GameTagRelationService gameTagRelationService;
 
     /**
@@ -89,10 +87,10 @@ public class TagService {
             // 创建新标签
             int currentTime = (int) (System.currentTimeMillis() / 1000);
             tag = new Tag()
-                .setName(name)
-                .setCreateTime(currentTime)
-                .setUpdateTime(currentTime)
-                .setIsDeleted(0);
+                    .setName(name)
+                    .setCreateTime(currentTime)
+                    .setUpdateTime(currentTime)
+                    .setIsDeleted(0);
             insert(tag);
         }
         return tag;
@@ -120,8 +118,9 @@ public class TagService {
 
     /**
      * 更新游戏标签
+     *
      * @param gameId 游戏ID
-     * @param tags 标签字符串，多个标签用逗号分隔
+     * @param tags   标签字符串，多个标签用逗号分隔
      */
     @Transactional
     @DataSource(DataSourceType.MASTER)

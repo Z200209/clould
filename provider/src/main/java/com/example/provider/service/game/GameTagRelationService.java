@@ -26,7 +26,7 @@ public class GameTagRelationService {
     public List<GameTagRelation> getByGameId(BigInteger gameId) {
         return mapper.getByGameId(gameId);
     }
-    
+
     /**
      * 根据游戏ID和标签ID获取关系
      */
@@ -53,25 +53,25 @@ public class GameTagRelationService {
         if (exist != null) {
             return 0; // 已存在，不需要创建
         }
-        
+
         // 创建新关系
         int currentTime = (int) (System.currentTimeMillis() / 1000);
         GameTagRelation relation = new GameTagRelation()
-            .setGameId(gameId)
-            .setTagId(tagId)
-            .setCreateTime(currentTime)
-            .setUpdateTime(currentTime)
-            .setIsDeleted(0);
-        
+                .setGameId(gameId)
+                .setTagId(tagId)
+                .setCreateTime(currentTime)
+                .setUpdateTime(currentTime)
+                .setIsDeleted(0);
+
         return mapper.insert(relation);
     }
-    
+
     /**
      * 批量删除不在标签ID列表中的关系
      */
     @DataSource(DataSourceType.MASTER)
-    public int deleteNotInTagIds(BigInteger gameId, List<BigInteger> tagIds) {
+    public void deleteNotInTagIds(BigInteger gameId, List<BigInteger> tagIds) {
         int currentTime = (int) (System.currentTimeMillis() / 1000);
-        return mapper.batchDeleteByGameIdAndNotInTagIds(gameId, tagIds, currentTime);
+        mapper.batchDeleteByGameIdAndNotInTagIds(gameId, tagIds, currentTime);
     }
 }

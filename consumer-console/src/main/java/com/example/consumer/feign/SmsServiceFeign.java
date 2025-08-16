@@ -1,7 +1,7 @@
 package com.example.consumer.feign;
 
+import com.example.common.entity.Sms;
 import com.example.common.entity.SmsTaskCrond;
-import com.example.provider.controller.domain.sms.SmsVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.math.BigInteger;
 import java.util.List;
 
-@FeignClient(name="provider", contextId = "smsServiceFeign", path = "/console/sms")
+@FeignClient(name = "provider", contextId = "smsServiceFeign", path = "/sms")
 public interface SmsServiceFeign {
     @RequestMapping("/send")
     boolean sendSms(
@@ -17,7 +17,7 @@ public interface SmsServiceFeign {
             @RequestParam(name = "templateParam") String templateParam);
 
     @RequestMapping("/records")
-    List<SmsVO> getSmsRecords(
+    List<Sms> getSmsRecords(
             @RequestParam("phone") String phone);
 
     @RequestMapping("/task/add")

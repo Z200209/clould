@@ -18,4 +18,5 @@ public class Game {
     private Integer updateTime;
     private Integer isDeleted;
     private BigInteger typeId;
+
 }
